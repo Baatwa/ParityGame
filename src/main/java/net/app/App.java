@@ -84,6 +84,7 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 		renderer.translate(renderer.getWidth()/2, renderer.getHeight()/2);
 		renderer.scale(zoom);
 		renderer.translate(-camera.x, -camera.y);
+		renderer.setStroke(2);
 		graph.render(renderer, selected);
 		
 	}

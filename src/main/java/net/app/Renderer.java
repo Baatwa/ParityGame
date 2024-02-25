@@ -1,9 +1,11 @@
 package net.app;
 
+import java.awt.BasicStroke;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,14 @@ public class Renderer extends Canvas implements Runnable {
 		bs = this.getBufferStrategy();
 		g = (Graphics2D) bs.getDrawGraphics();
 		g.clearRect(0, 0, getWidth(), getHeight());
+		g.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
+        g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 	}
 	
 	private void end() {
@@ -97,6 +107,10 @@ public class Renderer extends Canvas implements Runnable {
 			e.printStackTrace();
 		}
 	}
+	
+	public void setStroke(float size) {
+        g.setStroke(new BasicStroke(size, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 3));
+    }
 	
 	public void translate(float x, float y) {
 		g.translate(x, y);
