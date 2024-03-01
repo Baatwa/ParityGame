@@ -1,17 +1,21 @@
 package net.app;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Random;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-public class App implements RenderListener, MouseWheelListener, MouseListener, MouseMotionListener{
+public class App implements RenderListener, MouseWheelListener, MouseListener, MouseMotionListener, KeyListener{
 	
 	private JFrame frame;
 	private Renderer renderer;
@@ -20,6 +24,7 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 	private Point previous;
 	private Point mouseInModel;
 	private Node selected;
+	private Link selectedLink;
 	
 	private Graph graph;
 	
@@ -40,33 +45,60 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 		renderer.addMouseWheelListener(this);
 		renderer.addMouseListener(this);
 		renderer.addMouseMotionListener(this);
+		renderer.addKeyListener(this);
 		camera = new Point(0,0);
 		
 		Random r = new Random();
+		int node_nbr = r.nextInt(10) + 3;
+//		int node_nbr = 8;
+//		int closest_sq = (int) Math.pow(Math.floor(Math.sqrt(node_nbr)), 2);
 		
+		//nodes creation
 		graph = new Graph();
-		for(int i = 0; i<6; i++) {
-			graph.addNode(new Node(r.nextInt(500) - 250, r.nextInt(500) - 250, i+"", false));
+		for(int i = 0; i< node_nbr/2; i++) {
+			graph.addNode(new Node(r.nextInt(500) - 250, r.nextInt(500) - 250, (2*i)+"", false));
+			graph.addNode(new Node(r.nextInt(500) - 250, r.nextInt(500) - 250, (2*i+1)+"", true));
 		}
+		if(node_nbr%2 != 0) {
+			graph.addNode(new Node(r.nextInt(500) - 250, r.nextInt(500) - 250, (node_nbr-1)+"", false));
+		}		
 		
-		for(int i = 0; i<6; i++) {
-			for(int j = 0; j<6; j++) {
-				if(i!=j) {
-					graph.addLink(graph.getNodes().get(i), graph.getNodes().get(j));
-				}
+		//links creation
+		
+		for(int i = 0; i<node_nbr;i++) {
+			int target = r.nextInt(node_nbr-1);
+			if(target < i) {
+				graph.addLink(graph.getNodes().get(i), graph.getNodes().get(target));
+			}
+			else {
+				graph.addLink(graph.getNodes().get(i), graph.getNodes().get(target+1));
 			}
 		}
 		
+		int temp = r.nextInt(node_nbr*2);
+		for(int i = 0; i<temp; i++) {
+			int a = r.nextInt(node_nbr), b = r.nextInt(node_nbr);
+			if(a!=b) {
+				graph.addLink(graph.getNodes().get(a), graph.getNodes().get(b));
+			}
+		}
+		
+		
+		//regions creation
 		Region region = new Region(new Color(255,0,0,30), new Color(255,0,0,60), "rouge");
 		Region region2 = new Region(new Color(0,0,255,30), new Color(0,0,255,60), "bleu");
-		region.addNode(graph.getNodes().get(0));
-		region.addNode(graph.getNodes().get(1));
-		region.addNode(graph.getNodes().get(2));
+		for(int i = 0; i<node_nbr/2; i++) {
+			region.addNode(graph.getNodes().get(i));
+			region2.addNode(graph.getNodes().get(i+node_nbr/2));
+		}
+		if(node_nbr%2 != 0) {
+			region2.addNode(graph.getNodes().get(node_nbr-1));
+		}
 		graph.addRegion(region);
-		region2.addNode(graph.getNodes().get(3));
-		region2.addNode(graph.getNodes().get(4));
-		region2.addNode(graph.getNodes().get(5));
-		graph.addRegion(region2);
+		graph.addRegion(region2);		
+		
+		//nodes traversal
+		selectedLink = getRandom(getRandom(graph.getNodes()).getOutputs());
 		
 		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		frame.setVisible(true);
@@ -85,7 +117,7 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 		renderer.scale(zoom);
 		renderer.translate(-camera.x, -camera.y);
 		renderer.setStroke(2);
-		graph.render(renderer, selected);
+		graph.render(renderer, selected, selectedLink);
 		
 	}
 
@@ -98,14 +130,18 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 	}
 
 	
-	public void updateMousePos(int x, int y) {
+	public void updateMousePos(int x, int y, boolean skip) {
 		mouseInModel = fromScreenToModel(new Point(x, y));
+		if(skip) {
+			return;
+		}
 		selected = null;
 		for(Node node:graph.getNodes()) {
 			if(node.contains(mouseInModel)) {
 				selected = node;
 			}
 		}
+		
 	}
 	
 	@Override
@@ -117,13 +153,13 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 		if(SwingUtilities.isLeftMouseButton(e) && selected != null) {
 			selected.setPos(previous.add(mouseInModel));
 		}
-		updateMousePos(e.getX(), e.getY());
+		updateMousePos(e.getX(), e.getY(), SwingUtilities.isLeftMouseButton(e) && selected != null);
 	}
 
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		updateMousePos(e.getX(), e.getY());
+		updateMousePos(e.getX(), e.getY(),false);
 		
 		
 	}
@@ -165,6 +201,33 @@ public class App implements RenderListener, MouseWheelListener, MouseListener, M
 
 	@Override
 	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public static <T> T getRandom(Collection<? extends T> c) {
+		Random r = new Random();
+		return new ArrayList<T>(c).get(r.nextInt(c.size()));
+	}
+
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if(e.getKeyCode()==KeyEvent.VK_RIGHT) {
+			selectedLink = getRandom(selectedLink.getEnd().getOutputs());
+		}
+	}
+
+
+	@Override
+	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub
 		
 	}

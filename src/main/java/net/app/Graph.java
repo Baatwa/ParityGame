@@ -32,6 +32,10 @@ public class Graph {
 			return;
 		}
 		
+		if(start.equals(end)) {
+			return;
+		}
+		
 		if(links.contains(twin)) {
 			result.setHasTwin(true);
 			for(Link l:start.getInputs()) {
@@ -50,15 +54,18 @@ public class Graph {
 		regions.add(region);
 	}
 	
-	public void render(Renderer renderer, Node selected) {
+	public void render(Renderer renderer, Node selected, Link selectedLink) {
 		for(Region region:regions) {
 			region.render(renderer);
 		}
 		for(Link link:links) {
-			link.render(renderer);
+			link.render(renderer, selectedLink);
 		}
 		for(Node node:nodes) {
 			node.render(renderer, selected);
+		}
+		if(selectedLink != null) {
+			selectedLink.render(renderer, selectedLink);
 		}
 	}
 	

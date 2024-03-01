@@ -26,19 +26,22 @@ public class Link {
 		this.hasTwin = hasTwin;
 	}
 	
-	public void render(Renderer renderer) {
+	public void render(Renderer renderer, Link selected) {
 		Point vect = end.getPos().sub(start.getPos()).normalize();
 		Point vectOrtho = vect.ortho();
 		Point lineEnd = end.getPos().sub(vect.scale(30));
 		Point lineStart = start.getPos().add(vect.scale(30));
-		
+		Color c = selected==this? Color.RED:Color.BLACK;
 		
 //		if(hasTwin) {
 //			lineEnd = lineEnd.add(vectOrtho.scale(10));
 //			lineStart = lineStart.add(vectOrtho.scale(10));
 //		}
-		renderer.drawLine(lineStart, lineEnd, Color.BLACK);
-		renderer.drawLine(lineEnd, lineEnd.sub(vect.add(vectOrtho).scale(10)), Color.BLACK);
-		renderer.drawLine(lineEnd, lineEnd.sub(vect.sub(vectOrtho).scale(10)), Color.BLACK);
+		renderer.drawLine(lineStart, lineEnd, c);
+		renderer.drawLine(lineEnd, lineEnd.sub(vect.add(vectOrtho).scale(10)), c);
+		renderer.drawLine(lineEnd, lineEnd.sub(vect.sub(vectOrtho).scale(10)), c);
+	}
+	public Node getEnd() {
+		return end;
 	}
 }
