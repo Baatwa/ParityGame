@@ -64,11 +64,56 @@ def create_graph2():
     }
     return graph, priorities
 
+
+def gen_graph(nb_nodes,links,p = 0.5): 
+    """
+    Parameters
+    ----------
+    nb_nodes : integer
+        number of nodes in the graph.
+    links : integer
+        number of links added over the existing ones that guarantee the existence of an 'exit' from every node.
+    p : float, optional
+        probability of adding a link for each node in ascending order. The default is 0.5.
+
+    Returns
+    -------
+    G : dictionnary
+        graph.
+    priorities : dictionnary
+        priorities of nodes.
+
+    """
+    flag = 0
+    G = dict()
+    priorities = dict()
+
+    
+    for i in range(nb_nodes):
+        nb = list(range(0, nb_nodes))
+        nb.remove(i)
+        G[str(i)] = [str(random.choice(nb))]
+        priorities[str(i)] = [str(i)]
+        
+    while flag < links:
+        
+        for i in range(nb_nodes):
+            test = random.random()
+            if test < p:
+                nb = list(range(0, nb_nodes))
+                for x in G[str(i)]:
+                    nb.remove(int(x))
+                G[str(i)].append(str(random.choice(nb)))
+                flag += 1
+                
+    return G, priorities
+    
+
 def max_list_val(L):
     """
     Parameters
     ----------
-    L : TYPE : list
+    L : list
 
     Returns
     -------
@@ -130,5 +175,5 @@ def play_parity_game(graph, priorities):
     plt.show()
 
 if __name__ == "__main__":
-    graph, priorities = create_graph2()
+    graph, priorities = gen_graph(10, 6)
     play_parity_game(graph, priorities)
