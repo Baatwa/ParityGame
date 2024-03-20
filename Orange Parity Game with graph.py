@@ -89,7 +89,7 @@ def gen_graph(nb_nodes,links,p = 0.5):
     priorities = dict()
 
     
-    for i in range(nb_nodes):
+    for i in range(nb_nodes): # There is always an outgoing edge for each vertex. The play can't be 'stuck'.
         nb = list(range(0, nb_nodes))
         nb.remove(i)
         G[str(i)] = [str(random.choice(nb))]
@@ -173,7 +173,74 @@ def play_parity_game(graph, priorities):
     nx.draw(G, pos, with_labels=True, arrows=True, node_color='skyblue')
     nx.draw_networkx_nodes(G, pos, nodelist=[next_node], node_color='red', node_size=500)
     plt.show()
-
+    
+"""
 if __name__ == "__main__":
-    graph, priorities = gen_graph(10, 6)
+    graph, priorities = create_graph()
     play_parity_game(graph, priorities)
+"""   
+    
+def Zielonka_attractor(graph, U, player):
+    """
+    Parameters
+    ----------
+    graph : dict
+        graph of the parity game.
+    U : set
+        subset of the nodes of the graph.
+    player : bool
+        player 0 or player 1.
+
+    Returns
+    -------
+    Attr_n1 : set
+        attractor of the input 'player'.
+
+    """
+    V = set(graph.keys())
+    
+    V_p = set() # Set of elements of 'player'
+    V_opp = set() # Set of elements of 'opponent'
+    for x in V:
+        if int(x)%2 == player:
+            V_p.add(x)
+        else:
+            V_opp.add(x)
+    
+    Attr_n1 = U.copy()
+    
+    Attr_n = set()
+    
+    
+    while Attr_n1 != Attr_n: # Continue until Attr reach a stationary state
+        Attr_n = Attr_n1.copy()
+        
+        for u in V_p:
+            if any(v in Attr_n for v in graph.get(u)): # checks whether v is a successor of u
+                Attr_n1.add(u)
+                
+        for u in V_opp:
+            if all(v in Attr_n1 for v in graph.get(u)): # checks if all successors v of node u are in the attractor.
+                Attr_n1.add(u)
+                
+    return Attr_n1
+
+
+
+
+
+        
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
