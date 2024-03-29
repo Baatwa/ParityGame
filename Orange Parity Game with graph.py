@@ -174,11 +174,11 @@ def play_parity_game(graph, priorities):
     nx.draw_networkx_nodes(G, pos, nodelist=[next_node], node_color='red', node_size=500)
     plt.show()
     
-"""
+
 if __name__ == "__main__":
     graph, priorities = create_graph()
     play_parity_game(graph, priorities)
-"""   
+   
     
 def Zielonka_attractor(graph, U, player):
     """
@@ -225,7 +225,38 @@ def Zielonka_attractor(graph, U, player):
                 
     return Attr_n1
 
+def get_keys_for_vertex(graph, m):
+    keys = set()
+    for priority, vertices in graph.items():
+        if m in vertices:
+            keys.add(priority)
+    return keys
 
+i = 0
+def ZIELONKA(G):
+    global i
+    i += 1
+    print(G)
+    if not G:  
+        return set(), set()  
+    else:
+        m = int(max(G.values())[0])  
+        if m % 2 == 0:
+            p1 = 'a'
+        else:
+            p1 = 'b'
+        U = set(str(priorities[str(m)]))  
+        A = Zielonka_attractor(G, U, 0 if p1 == 'a' else 1)  
+        W_prime_a, W_prime_b = ZIELONKA({key: value for key, value in G.items() if key not in A}) 
+        if not W_prime_b:
+            W_p1 = A.union(W_prime_a)  
+            W_p2 = set()  
+        else:
+            B = Zielonka_attractor(G, W_prime_b, 0 if p1 == 'b' else 1)  
+            W_prime_a, W_prime_b = ZIELONKA({key: value for key, value in G.items() if key not in B})  
+            W_p1 = W_prime_a
+            W_p2 = W_prime_b.union(B)  
+        return W_p1, W_p2
 
 
 
