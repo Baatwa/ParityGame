@@ -37,13 +37,13 @@ def create_graph2():
         '6': ['9','10'],
         '7': ['10','8'],
         '8': ['11'],
-        '9': ['12'],
+        '9': ['12','6'],
         '10': ['13'],
         '11': ['14'],
         '12': ['15'],
         '13': ['15'],
         '14': ['13'],
-        '15': ['4']
+        '15': ['4','13']
     }
     priorities = {
         '1': 1,
@@ -63,6 +63,43 @@ def create_graph2():
         '15': 15
     }
     return graph, priorities
+
+def gen_connected_graph(nb_nodes):
+    """
+    Génère un graphe connexe avec le nombre de nœuds spécifié.
+
+    Parameters
+    ----------
+    nb_nodes : int
+        Nombre de nœuds dans le graphe.
+
+    Returns
+    -------
+    G : dict
+        Graphe représenté sous forme de dictionnaire.
+
+    """
+    if nb_nodes <= 0:
+        return {}
+
+    G = {str(0): []}  # Commencer avec un nœud
+    
+    priorities = dict()
+
+    for i in range(nb_nodes): 
+        priorities[str(i)] = i
+
+    # Ajouter des nœuds et les connecter à des nœuds existants dans le graphe
+    for i in range(1, nb_nodes):
+        # Choisir un nœud existant aléatoire pour se connecter
+        node_to_connect = str(random.randint(0, i - 1))
+        # Connecter le nouveau nœud à un nœud existant
+        G[str(i)] = [node_to_connect]
+        # Mettre à jour les connexions du nœud connecté
+        G[node_to_connect].append(str(i))
+
+    return G, priorities
+
 
 
 def gen_graph(nb_nodes,links,p = 0.5): 
@@ -93,7 +130,7 @@ def gen_graph(nb_nodes,links,p = 0.5):
         nb = list(range(0, nb_nodes))
         nb.remove(i)
         G[str(i)] = [str(random.choice(nb))]
-        priorities[str(i)] = [str(i)]
+        priorities[str(i)] = i
         
     while flag < links:
         
@@ -103,11 +140,16 @@ def gen_graph(nb_nodes,links,p = 0.5):
                 nb = list(range(0, nb_nodes))
                 for x in G[str(i)]:
                     nb.remove(int(x))
-                G[str(i)].append(str(random.choice(nb)))
-                flag += 1
+                if nb:
+                    new = str(random.choice(nb))
+                    target = random.choice(nb)
+                    if str(target) not in G[str(i)] and str(i) not in G.get(str(target), []):
+                        G.setdefault(str(i), []).append(str(target))
+                        flag += 1
+                        
                 
     return G, priorities
-    
+
 
 def max_list_val(L):
     """
@@ -135,7 +177,7 @@ def play_parity_game(graph, priorities):
     pos = nx.spring_layout(G)
     
     current_node = '1'  # Starting node
-    player = 0  # Player 0 starts
+    
     L = []
     
     # Visual representation of the graph and solving 
@@ -174,13 +216,49 @@ def play_parity_game(graph, priorities):
     nx.draw_networkx_nodes(G, pos, nodelist=[next_node], node_color='red', node_size=500)
     plt.show()
     
+exemple = {'0' : ['3','1'],
+          '1' : ['4','6'],
+          '2' : ['0','5'],
+          '3' : ['2'],
+          '4' : ['0','1'],
+          '5' : ['8'],
+          '6' : ['8','1'],
+          '8' : ['2','5']}
+
+exemple2 = {'0' : ['2'],
+          '1' : ['5'],
+          '2' : ['0'],
+          '4' : ['5'],
+          '3' : ['2'],
+          '5' : ['1']}
+
+exemple3 = {'0' : ['1','4'],
+          '1' : ['5','0'],
+          '2' : ['0','4'],
+          '4' : ['2'],
+          '3' : ['1'],
+          '5' : ['1','3']}
+
+priorities = dict()
+
+for i in range(len(exemple3.keys())): 
+    priorities[str(i)] = i
+"""
+for i in range(len(bidule.keys())+1):
+    if i != 7:
+        priorities[str(i)] = i
+"""
+
 
 if __name__ == "__main__":
-    graph, priorities = create_graph()
+    #graph, priorities = gen_connected_graph(15)
+    #graph, priorities = gen_graph(10,10)
+    #graph, priorities = create_graph2()
+    graph = exemple3
     play_parity_game(graph, priorities)
    
-    
-def Zielonka_attractor(graph, U, player):
+
+def Zielonka_attractor(graph, U, player, draw = False):
     """
     Parameters
     ----------
@@ -197,6 +275,16 @@ def Zielonka_attractor(graph, U, player):
         attractor of the input 'player'.
 
     """
+    
+    G = nx.DiGraph(graph)
+    pos = nx.spring_layout(G)
+    if draw :
+        current_node = list(U)
+        
+        nx.draw(G, pos, with_labels=True, arrows=True, node_color='skyblue')
+        nx.draw_networkx_nodes(G, pos, nodelist=current_node, node_color='red', node_size=500) # current node at each step is red
+        plt.show()
+    
     V = set(graph.keys())
     
     V_p = set() # Set of elements of 'player'
@@ -214,48 +302,91 @@ def Zielonka_attractor(graph, U, player):
     
     while Attr_n1 != Attr_n: # Continue until Attr reach a stationary state
         Attr_n = Attr_n1.copy()
-        
         for u in V_p:
             if any(v in Attr_n for v in graph.get(u)): # checks whether v is a successor of u
                 Attr_n1.add(u)
+                if draw :
+                    current_node.append(u)
+                    nx.draw(G, pos, with_labels=True, arrows=True, node_color='skyblue')
+                    nx.draw_networkx_nodes(G, pos, nodelist=current_node, node_color='orange', node_size=500) # current node at each step is red
+                    plt.show()
                 
         for u in V_opp:
-            if all(v in Attr_n1 for v in graph.get(u)): # checks if all successors v of node u are in the attractor.
+            if all(v in Attr_n for v in graph.get(u)): # checks if all successors v of node u are in the attractor.
                 Attr_n1.add(u)
+                if draw :
+                    current_node.append(u)
+                    nx.draw(G, pos, with_labels=True, arrows=True, node_color='skyblue')
+                    nx.draw_networkx_nodes(G, pos, nodelist=current_node, node_color='orange', node_size=500) # current node at each step is red
+                    plt.show()
                 
     return Attr_n1
 
-def get_keys_for_vertex(graph, m):
-    keys = set()
-    for priority, vertices in graph.items():
-        if m in vertices:
-            keys.add(priority)
-    return keys
 
-i = 0
-def ZIELONKA(G):
-    global i
-    i += 1
+
+def ZIELONKA(G, priorities):
+    """
+
+    Parameters
+    ----------
+    G : dict
+        graph of the parity game.
+    priorities : dict
+        priorities.
+
+    Returns
+    -------
+    set
+        Winning set of player 1.
+    set
+        Winning set of player 2.
+
+    """
     print(G)
-    if not G:  
+    if not G:
+        print('VIDE')
         return set(), set()  
     else:
-        m = int(max(G.values())[0])  
+        m = int(max(priorities.values()))
         if m % 2 == 0:
-            p1 = 'a'
+            p1 = 0
         else:
-            p1 = 'b'
-        U = set(str(priorities[str(m)]))  
-        A = Zielonka_attractor(G, U, 0 if p1 == 'a' else 1)  
-        W_prime_a, W_prime_b = ZIELONKA({key: value for key, value in G.items() if key not in A}) 
+            p1 = 1
+        U = set([str(priorities[str(m)])])
+        A = Zielonka_attractor(G, U, p1)
+        print('Attracteur A :')
+        print(A)
+        if p1 == 0:
+            W_prime_a, W_prime_b = ZIELONKA({key: [value for value in values if value not in A] for key, values in G.items() if key not in A}, {key: values for key, values in priorities.items() if key not in A})
+            print('W_primea,w_prime_b  A1' )
+            print(W_prime_a, W_prime_b)
+        else:
+            W_prime_b, W_prime_a = ZIELONKA({key: [value for value in values if value not in A] for key, values in G.items() if key not in A}, {key: values for key, values in priorities.items() if key not in A})
+            print('W_primea,w_prime_b A2')
+            print(W_prime_a, W_prime_b)
         if not W_prime_b:
             W_p1 = A.union(W_prime_a)  
             W_p2 = set()  
         else:
-            B = Zielonka_attractor(G, W_prime_b, 0 if p1 == 'b' else 1)  
-            W_prime_a, W_prime_b = ZIELONKA({key: value for key, value in G.items() if key not in B})  
-            W_p1 = W_prime_a
-            W_p2 = W_prime_b.union(B)  
+           
+            if p1 == 0:
+                B = Zielonka_attractor(G, W_prime_b, 1 - p1)
+                print('Attracteur B :')
+                print(B)
+                W_prime_a, W_prime_b = ZIELONKA({key: [value for value in values if value not in B] for key, values in G.items() if key not in B}, {key: values for key, values in priorities.items() if key not in B})  
+                print('W_primea,w_prime_b B1')
+                print(W_prime_a, W_prime_b)
+                W_p1 = W_prime_a
+                W_p2 = W_prime_b.union(B)
+            else:
+                B = Zielonka_attractor(G, W_prime_b, 1 - p1)
+                print('Attracteur B :')
+                print(B)
+                W_prime_b, W_prime_a = ZIELONKA({key: [value for value in values if value not in B] for key, values in G.items() if key not in B}, {key: values for key, values in priorities.items() if key not in B})
+                print('W_primea,w_prime_b B2')
+                print(W_prime_a, W_prime_b)
+                W_p2 = W_prime_b
+                W_p1 = W_prime_a.union(B)
         return W_p1, W_p2
 
 
